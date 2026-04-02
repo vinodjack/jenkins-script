@@ -8,7 +8,7 @@ options {
 }
 
 parameters {
-    string(name: 'BRANCH', defaultValue: 'master', description: 'Git Branch')
+    string(name: 'BRANCH', defaultValue: 'main', description: 'Git Branch')
     choice(name: 'ENV', choices: ['QA', 'UAT', 'PROD'], description: 'Environment')
     string(name: 'TAGS', defaultValue: '@smoke', description: 'Test Tags')
     choice(name: 'PROJECT', choices: ['UI_Test', 'API_Test', 'MOBILE_Test'], description: 'Project')
@@ -25,69 +25,62 @@ stages {
 
     stage('Checkout Code') {
         steps {
-            checkout([
-                $class: 'GitSCM',
-                branches: [[name: "*/${params.BRANCH}"]],
-                userRemoteConfigs: [[url: "${params.REPO}"]]
-            ])
+            script {
+                echo "📌 Cloning Repo: ${params.REPO}"
+                echo "Branch: ${params.BRANCH}"
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${params.BRANCH}"]],
+                    userRemoteConfigs: [[url: "${params.REPO}"]]
+                ])
+            }
         }
     }
 
     stage('Install Dependencies') {
         steps {
-            bat 'npm install'
-            bat 'npx playwright install'
+            script {
+                echo "📦 Installing dependencies..."
+                bat 'npm install'
+                bat 'npx playwright install'
+            }
         }
     }
 
     stage('Run Tests') {
         steps {
-            bat """
-            npm test -- --env ${params.ENV} --pname ${params.PROJECT} --browser ${params.BROWSER} --tags "${params.TAGS}" --parallel ${params.WORKER}
-            """
-        }
-    }
-
-    stage('Generate Summary + Zip Reports') {
-        steps {
             script {
-                echo "📊 Generating Summary..."
 
-                // Create summary (simple JS parser)
-                writeFile file: 'summary.js', text: """
-                const fs = require('fs');
-                try {
-                    const data = JSON.parse(fs.readFileSync('testReports/report.json'));
-                    let passed = 0, failed = 0;
+                def testCommand = "npm test -- --env ${params.ENV} --pname ${params.PROJECT} --browser ${params.BROWSER} --tags \"${params.TAGS}\" --parallel ${params.WORKER}"
 
-                    data.forEach(feature => {
-                        feature.elements.forEach(scenario => {
-                            scenario.steps.forEach(step => {
-                                if(step.result.status === 'passed') passed++;
-                                if(step.result.status === 'failed') failed++;
-                            });
-                        });
-                    });
+                echo "🚀 EXECUTION DETAILS"
+                echo "══════════════════════════════"
+                echo "Repo: ${params.REPO}"
+                echo "Branch: ${params.BRANCH}"
+                echo "Environment: ${params.ENV}"
+                echo "Project: ${params.PROJECT}"
+                echo "Browser: ${params.BROWSER}"
+                echo "Tags: ${params.TAGS}"
+                echo "Workers: ${params.WORKER}"
+                echo "══════════════════════════════"
+                echo "Command: ${testCommand}"
+                echo "══════════════════════════════"
 
-                    fs.writeFileSync('summary.txt', `PASSED=${passed}\\nFAILED=${failed}`);
-                } catch(e) {
-                    fs.writeFileSync('summary.txt', 'PASSED=0\\nFAILED=0');
-                }
-                """
-
-                bat 'node summary.js'
-
-                // Zip reports
-                bat 'powershell Compress-Archive -Path playwright-report -DestinationPath report.zip -Force'
+                bat "${testCommand}"
             }
         }
     }
 
     stage('Archive Reports') {
         steps {
-            archiveArtifacts artifacts: 'report.zip', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'testReports/*.json', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'testReports/screenshots/**', allowEmptyArchive: true
+            script {
+                echo "📊 Archiving Reports..."
+
+                archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'testReports/**', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'testReports/screenshots/**', allowEmptyArchive: true
+            }
         }
     }
 }
@@ -96,9 +89,9 @@ post {
 
     always {
         publishHTML([
-            reportDir: 'testReports',
+            reportDir: 'playwright-report',
             reportFiles: 'index.html',
-            reportName: 'index',
+            reportName: 'Playwright Report',
             keepAll: true,
             alwaysLinkToLastBuild: true,
             allowMissing: true
@@ -106,68 +99,80 @@ post {
     }
 
     success {
-        script {
-            def summary = readFile('summary.txt')
-
-            emailext (
-                subject: "SUCCESS | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
-                body: """
-                <html>
-                <body style="font-family:Segoe UI; background:#f4f6f8; padding:20px;">
+        emailext (
+            subject: "✅ SUCCESS | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
+            body: """
+            <html>
+            <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
+            
+            <div style="background:#ffffff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 
-                <div style="background:#fff; padding:20px; border-left:6px solid #28a745;">
-                    
-                    <h2 style="color:#28a745;">Build Successful</h2>
+                <h2 style="color:#28a745;">✅ Build Successful</h2>
+                
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><td><b>Job</b></td><td>${env.JOB_NAME}</td></tr>
+                    <tr><td><b>Build</b></td><td>#${env.BUILD_NUMBER}</td></tr>
+                    <tr><td><b>Environment</b></td><td>${params.ENV}</td></tr>
+                    <tr><td><b>Project</b></td><td>${params.PROJECT}</td></tr>
+                    <tr><td><b>Browser</b></td><td>${params.BROWSER}</td></tr>
+                    <tr><td><b>Tags</b></td><td>${params.TAGS}</td></tr>
+                </table>
 
-                    <pre>${summary}</pre>
+                <br/>
 
-                    <p><b>Environment:</b> ${params.ENV}</p>
-                    <p><b>Project:</b> ${params.PROJECT}</p>
-                    <p><b>Browser:</b> ${params.BROWSER}</p>
+                <a href="${env.BUILD_URL}" style="padding:10px 15px; background:#007bff; color:#fff; text-decoration:none; border-radius:5px;">
+                    🔍 View Build
+                </a>
 
-                    <a href="${env.BUILD_URL}">View Build</a><br/>
-                    <a href="${env.BUILD_URL}HTML_20Report">View Report</a>
+                <a href="${env.BUILD_URL}HTML_20Report" style="padding:10px 15px; background:#17a2b8; color:#fff; text-decoration:none; border-radius:5px; margin-left:10px;">
+                    📊 View Report
+                </a>
 
-                    <p><b>Attachments:</b> ZIP + JSON + Screenshots</p>
+            </div>
 
-                </div>
-                </body>
-                </html>
-                """,
-                to: "${env.EMAIL_RECIPIENTS}",
-                mimeType: 'text/html',
-                attachmentsPattern: 'report.zip, testReports/*.json, testReports/screenshots/**'
-            )
-        }
+            </body>
+            </html>
+            """,
+            to: "${env.EMAIL_RECIPIENTS}",
+            mimeType: 'text/html',
+            attachmentsPattern: 'testReports/*.json'
+        )
     }
 
     failure {
-        script {
-            def summary = readFile('summary.txt')
-
-            emailext (
-                subject: "FAILURE | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
-                body: """
-                <html>
-                <body style="font-family:Segoe UI; background:#f4f6f8; padding:20px;">
+        emailext (
+            subject: "❌ FAILURE | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
+            body: """
+            <html>
+            <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
+            
+            <div style="background:#ffffff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 
-                <div style="background:#fff; padding:20px; border-left:6px solid #dc3545;">
-                    
-                    <h2 style="color:#dc3545;">Build Failed</h2>
+                <h2 style="color:#dc3545;">❌ Build Failed</h2>
+                
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><td><b>Job</b></td><td>${env.JOB_NAME}</td></tr>
+                    <tr><td><b>Build</b></td><td>#${env.BUILD_NUMBER}</td></tr>
+                    <tr><td><b>Environment</b></td><td>${params.ENV}</td></tr>
+                    <tr><td><b>Project</b></td><td>${params.PROJECT}</td></tr>
+                </table>
 
-                    <pre>${summary}</pre>
+                <br/>
 
-                    <p><a href="${env.BUILD_URL}console">View Logs</a></p>
+                <a href="${env.BUILD_URL}console" style="padding:10px 15px; background:#dc3545; color:#fff; text-decoration:none; border-radius:5px;">
+                    🔎 View Logs
+                </a>
 
-                </div>
-                </body>
-                </html>
-                """,
-                to: "${env.EMAIL_RECIPIENTS}",
-                mimeType: 'text/html',
-                attachmentsPattern: 'report.zip, testReports/*.json, testReports/screenshots/**'
-            )
-        }
+            </div>
+
+            </body>
+            </html>
+            """,
+            to: "${env.EMAIL_RECIPIENTS}",
+            mimeType: 'text/html',
+            attachmentsPattern: 'testReports/*.json'
+        )
     }
 }
+
 }
