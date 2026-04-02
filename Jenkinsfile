@@ -7,13 +7,14 @@ pipeline {
         string(name: 'TAGS', defaultValue: '@smoke', description: 'Test Tags')
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser')
         choice(name: 'PROJECT', choices: ['UI_Test', 'API_Test', 'MOBILE_Test'], description: 'Project')
+        choince(name: 'REPO', defaultValue: 'https://github.com/vinodjack/playwright-framework.git', description: 'Git Repo URL')
     }
 
     stages {
 
         stage('Checkout Code') {
             steps {
-                git branch: "${params.BRANCH}", url: 'https://github.com/vinodjack/jenkins-script.git'
+                git branch: "${params.BRANCH}", url: "${params.REPO}"
             }
         }
 
