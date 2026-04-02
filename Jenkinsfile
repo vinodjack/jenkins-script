@@ -8,7 +8,7 @@ options {
 }
 
 parameters {
-    string(name: 'BRANCH', defaultValue: 'main', description: 'Git Branch')
+    string(name: 'BRANCH', defaultValue: 'master', description: 'Git Branch')
     choice(name: 'ENV', choices: ['QA', 'UAT', 'PROD'], description: 'Environment')
     string(name: 'TAGS', defaultValue: '@smoke', description: 'Test Tags')
     choice(name: 'PROJECT', choices: ['UI_Test', 'API_Test', 'MOBILE_Test'], description: 'Project')
