@@ -100,32 +100,77 @@ post {
 
     success {
         emailext (
-            subject: "SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+            subject: "✅ SUCCESS | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
             body: """
-            <h3>Build Successful 🎉</h3>
-            <p><b>Environment:</b> ${params.ENV}</p>
-            <p><b>Project:</b> ${params.PROJECT}</p>
-            <p><b>Browser:</b> ${params.BROWSER}</p>
-            <p><b>Tags:</b> ${params.TAGS}</p>
-            <p><a href="${env.BUILD_URL}">View Build</a></p>
-            <p><a href="${env.BUILD_URL}HTML_20Report">View Report</a></p>
+            <html>
+            <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
+            
+            <div style="background:#ffffff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                
+                <h2 style="color:#28a745;">✅ Build Successful</h2>
+                
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><td><b>Job</b></td><td>${env.JOB_NAME}</td></tr>
+                    <tr><td><b>Build</b></td><td>#${env.BUILD_NUMBER}</td></tr>
+                    <tr><td><b>Environment</b></td><td>${params.ENV}</td></tr>
+                    <tr><td><b>Project</b></td><td>${params.PROJECT}</td></tr>
+                    <tr><td><b>Browser</b></td><td>${params.BROWSER}</td></tr>
+                    <tr><td><b>Tags</b></td><td>${params.TAGS}</td></tr>
+                </table>
+
+                <br/>
+
+                <a href="${env.BUILD_URL}" style="padding:10px 15px; background:#007bff; color:#fff; text-decoration:none; border-radius:5px;">
+                    🔍 View Build
+                </a>
+
+                <a href="${env.BUILD_URL}HTML_20Report" style="padding:10px 15px; background:#17a2b8; color:#fff; text-decoration:none; border-radius:5px; margin-left:10px;">
+                    📊 View Report
+                </a>
+
+            </div>
+
+            </body>
+            </html>
             """,
             to: "${env.EMAIL_RECIPIENTS}",
-            mimeType: 'text/html'
+            mimeType: 'text/html',
+            attachmentsPattern: 'testReports/*.json'
         )
     }
 
     failure {
         emailext (
-            subject: "FAILURE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+            subject: "❌ FAILURE | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
             body: """
-            <h3>Build Failed ❌</h3>
-            <p><b>Environment:</b> ${params.ENV}</p>
-            <p><b>Project:</b> ${params.PROJECT}</p>
-            <p><a href="${env.BUILD_URL}console">View Logs</a></p>
+            <html>
+            <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
+            
+            <div style="background:#ffffff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                
+                <h2 style="color:#dc3545;">❌ Build Failed</h2>
+                
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><td><b>Job</b></td><td>${env.JOB_NAME}</td></tr>
+                    <tr><td><b>Build</b></td><td>#${env.BUILD_NUMBER}</td></tr>
+                    <tr><td><b>Environment</b></td><td>${params.ENV}</td></tr>
+                    <tr><td><b>Project</b></td><td>${params.PROJECT}</td></tr>
+                </table>
+
+                <br/>
+
+                <a href="${env.BUILD_URL}console" style="padding:10px 15px; background:#dc3545; color:#fff; text-decoration:none; border-radius:5px;">
+                    🔎 View Logs
+                </a>
+
+            </div>
+
+            </body>
+            </html>
             """,
             to: "${env.EMAIL_RECIPIENTS}",
-            mimeType: 'text/html'
+            mimeType: 'text/html',
+            attachmentsPattern: 'testReports/*.json'
         )
     }
 }
