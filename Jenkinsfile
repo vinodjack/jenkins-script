@@ -96,9 +96,9 @@ post {
 
     always {
         publishHTML([
-            reportDir: 'playwright-report',
+            reportDir: 'testReports',
             reportFiles: 'index.html',
-            reportName: 'Playwright Report',
+            reportName: 'index',
             keepAll: true,
             alwaysLinkToLastBuild: true,
             allowMissing: true
