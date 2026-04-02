@@ -7,7 +7,7 @@ pipeline {
         string(name: 'TAGS', defaultValue: '@smoke', description: 'Test Tags')
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser')
         choice(name: 'PROJECT', choices: ['UI_Test', 'API_Test', 'MOBILE_Test'], description: 'Project')
-        choince(name: 'REPO', defaultValue: 'https://github.com/vinodjack/playwright-framework.git', description: 'Git Repo URL')
+        choice(name: 'REPO', defaultValue: 'https://github.com/vinodjack/playwright-framework.git', description: 'Git Repo URL')
     }
 
     stages {
