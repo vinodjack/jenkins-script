@@ -26,7 +26,7 @@ stages {
     stage('Checkout Code') {
         steps {
             script {
-                echo "📌 Cloning Repo: ${params.REPO}"
+                echo "Cloning Repo: ${params.REPO}"
                 echo "Branch: ${params.BRANCH}"
 
                 checkout([
@@ -41,7 +41,7 @@ stages {
     stage('Install Dependencies') {
         steps {
             script {
-                echo "📦 Installing dependencies..."
+                echo "Installing dependencies..."
                 bat 'npm install'
                 bat 'npx playwright install'
             }
@@ -54,7 +54,7 @@ stages {
 
                 def testCommand = "npm test -- --env ${params.ENV} --pname ${params.PROJECT} --browser ${params.BROWSER} --tags \"${params.TAGS}\" --parallel ${params.WORKER}"
 
-                echo "🚀 EXECUTION DETAILS"
+                echo "EXECUTION DETAILS"
                 echo "══════════════════════════════"
                 echo "Repo: ${params.REPO}"
                 echo "Branch: ${params.BRANCH}"
@@ -75,7 +75,7 @@ stages {
     stage('Archive Reports') {
         steps {
             script {
-                echo "📊 Archiving Reports..."
+                echo "Archiving Reports..."
 
                 archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
                 archiveArtifacts artifacts: 'testReports/**', allowEmptyArchive: true
@@ -100,14 +100,14 @@ post {
 
     success {
         emailext (
-            subject: "✅ SUCCESS | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
+            subject: "SUCCESS | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
             body: """
             <html>
             <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
             
             <div style="background:#ffffff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 
-                <h2 style="color:#28a745;">✅ Build Successful</h2>
+                <h2 style="color:#28a745;">Build Successful</h2>
                 
                 <table style="width:100%; border-collapse:collapse;">
                     <tr><td><b>Job</b></td><td>${env.JOB_NAME}</td></tr>
@@ -121,11 +121,11 @@ post {
                 <br/>
 
                 <a href="${env.BUILD_URL}" style="padding:10px 15px; background:#007bff; color:#fff; text-decoration:none; border-radius:5px;">
-                    🔍 View Build
+                     View Build
                 </a>
 
                 <a href="${env.BUILD_URL}HTML_20Report" style="padding:10px 15px; background:#17a2b8; color:#fff; text-decoration:none; border-radius:5px; margin-left:10px;">
-                    📊 View Report
+                     View Report
                 </a>
 
             </div>
@@ -141,14 +141,14 @@ post {
 
     failure {
         emailext (
-            subject: "❌ FAILURE | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
+            subject: "FAILURE | ${env.JOB_NAME} | Build #${env.BUILD_NUMBER}",
             body: """
             <html>
             <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
             
             <div style="background:#ffffff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 
-                <h2 style="color:#dc3545;">❌ Build Failed</h2>
+                <h2 style="color:#dc3545;">Build Failed</h2>
                 
                 <table style="width:100%; border-collapse:collapse;">
                     <tr><td><b>Job</b></td><td>${env.JOB_NAME}</td></tr>
@@ -160,7 +160,7 @@ post {
                 <br/>
 
                 <a href="${env.BUILD_URL}console" style="padding:10px 15px; background:#dc3545; color:#fff; text-decoration:none; border-radius:5px;">
-                    🔎 View Logs
+                    View Logs
                 </a>
 
             </div>
