@@ -6,7 +6,7 @@ pipeline {
         choice(name: 'ENV', choices: ['QA', 'UAT', 'PROD'], description: 'Environment')
         string(name: 'TAGS', defaultValue: '@smoke', description: 'Test Tags')
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser')
-        choice(name: 'PROJECT', choices: ['UI', 'API', 'MOBILE'], description: 'Project')
+        choice(name: 'PROJECT', choices: ['UI_Test', 'API_Test', 'MOBILE_Test'], description: 'Project')
     }
 
     stages {
