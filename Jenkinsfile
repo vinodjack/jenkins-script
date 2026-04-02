@@ -1,31 +1,23 @@
 pipeline {
     agent any
 
-    options {
-        timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-    }
-
     parameters {
-        choice(name: 'ENV', choices: ['QA', 'UAT', 'PROD'], description: 'Select Environment')
-        string(name: 'TAGS', defaultValue: '@smoke', description: 'Cucumber/Playwright Tags')
-        choice(name: 'PROJECT', choices: ['UI', 'API', 'MOBILE'], description: 'Project Type')
-    }
-
-    environment {
-        NODE_VERSION = '18'
-        EMAIL_RECIPIENTS = 'your-email@example.com'
+        string(name: 'BRANCH', defaultValue: 'main', description: 'Git Branch')
+        choice(name: 'ENV', choices: ['QA', 'UAT', 'PROD'], description: 'Environment')
+        string(name: 'TAGS', defaultValue: '@smoke', description: 'Test Tags')
+        choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser')
+        choice(name: 'PROJECT', choices: ['UI', 'API', 'MOBILE'], description: 'Project')
     }
 
     stages {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo.git'
+                git branch: "${params.BRANCH}", url: 'https://github.com/vinodjack/jenkins-script.git'
             }
         }
 
-        stage('Install Node & Dependencies') {
+        stage('Install Dependencies') {
             steps {
                 bat 'npm install'
                 bat 'npx playwright install'
@@ -35,57 +27,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 bat """
-                npx playwright test --grep ${params.TAGS} --project=${params.PROJECT}
+                npx playwright test --grep ${params.TAGS} ^
+                --project=${params.BROWSER} ^
+                --env=${params.ENV}
                 """
             }
-        }
-
-        stage('Archive Results') {
-            steps {
-                archiveArtifacts artifacts: '**/playwright-report/**', allowEmptyArchive: true
-            }
-        }
-    }
-
-    post {
-
-        always {
-            publishHTML([
-                reportDir: 'playwright-report',
-                reportFiles: 'index.html',
-                reportName: 'Playwright Report',
-                keepAll: true,
-                alwaysLinkToLastBuild: true
-            ])
-        }
-
-        success {
-            emailext (
-                subject: "SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                body: """
-                <h3>Build Successful</h3>
-                <p><b>Job:</b> ${env.JOB_NAME}</p>
-                <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
-                <p><b>Environment:</b> ${params.ENV}</p>
-                <p><a href="${env.BUILD_URL}">View Build</a></p>
-                """,
-                to: "${env.EMAIL_RECIPIENTS}",
-                mimeType: 'text/html'
-            )
-        }
-
-        failure {
-            emailext (
-                subject: "FAILURE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                body: """
-                <h3>Build Failed</h3>
-                <p><b>Job:</b> ${env.JOB_NAME}</p>
-                <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
-                <p><a href="${env.BUILD_URL}console">View Logs</a></p>
-                """,
-                to: "${env.EMAIL_RECIPIENTS}",
-                mimeType: 'text/html'
-            )
         }
     }
 }
